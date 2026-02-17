@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id              String        @id
+  name            String        @db.Text
+  email           String        @unique
+  emailVerified   Boolean       @default(false)
+  image           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  username        String?       @db.Text
+  displayUsername String?       @db.Text
+  role            String?       @db.Text
+  banned          Boolean?      @default(false)
+  banReason       String?       @db.Text
+  banExpires      DateTime?
+  accounts        Account[]
+  sessions        Session[]
+  transactions    transaction[]
+  auditLogs       AuditLog[]
+
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?  @db.Text
+  userAgent      String?  @db.Text
+  userId         String
+  impersonatedBy String?  @db.Text
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String    @db.Text
+  providerId            String    @db.Text
+  userId                String
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  password              String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String   @db.Text
+  value      String   @db.Text
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier(length: 191)])
+  @@map("verification")
+}
+
+model category {
+  id        String    @id
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  products  product[]
+}
+
+model product {
+  id               String            @id
+  name             String
+  description      String?
+  price            Decimal           @db.Decimal(10, 2)
+  stock            Int               @default(0)
+  sku              String            @unique(map: "Product_sku_key")
+  categoryId       String
+  category         category          @relation(fields: [categoryId], references: [id])
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime
+  transactionItems transactionitem[]
+
+  @@index([categoryId], map: "Product_categoryId_idx")
+}
+
+model stocklog {
+  id        String   @id
+  productId String
+  change    Int
+  reason    String
+  timestamp DateTime @default(now())
+
+  @@index([productId], map: "StockLog_productId_idx")
+}
+
+model transaction {
+  id            String            @id
+  total         Decimal           @db.Decimal(10, 2)
+  cashierId     String
+  cashier       User              @relation(fields: [cashierId], references: [id])
+  paymentMethod String
+  items         transactionitem[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime
+  customerId    String?
+  customer      customer?         @relation(fields: [customerId], references: [id])
+
+  @@index([cashierId], map: "Transaction_cashierId_idx")
+  @@index([createdAt], map: "Transaction_createdAt_idx")
+  @@index([customerId])
+}
+
+model transactionitem {
+  id            String      @id
+  transactionId String
+  productId     String
+  quantity      Int
+  price         Decimal     @db.Decimal(10, 2)
+  product       product     @relation(fields: [productId], references: [id])
+  transaction   transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([transactionId], map: "TransactionItem_transactionId_idx")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  details   String?  @db.Text
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@map("audit_log")
+}
+
+model customer {
+  id           String        @id
+  name         String
+  email        String?       @unique
+  phone        String?
+  address      String?
+  transactions transaction[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
