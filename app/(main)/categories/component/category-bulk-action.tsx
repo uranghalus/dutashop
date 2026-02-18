@@ -1,65 +1,69 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { type Table } from '@tanstack/react-table'
-import { RiDeleteBinLine } from '@remixicon/react'
+import { useState } from "react";
+import { type Table } from "@tanstack/react-table";
+import { RiDeleteBinLine } from "@remixicon/react";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { DataTableBulkActions } from '@/components/datatable/datatable-bulk-action'
-import { category } from '@/generated/prisma/client'
-import { CategoryMultiDeleteDialog } from './category-multi-delete-dialog'
-
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DataTableBulkActions } from "@/components/datatable/datatable-bulk-action";
+import { category } from "@/generated/prisma/client";
+import { CategoryMultiDeleteDialog } from "./category-multi-delete-dialog";
 
 type CategoryBulkActionsProps<TData> = {
-    table: Table<TData>
-}
+  table: Table<TData>;
+};
+
+import { authClient } from "@/lib/auth-client";
 
 export function CategoryBulkActions<TData>({
-    table,
+  table,
 }: CategoryBulkActionsProps<TData>) {
-    const [openDelete, setOpenDelete] = useState(false)
+  const { data: session } = authClient.useSession();
 
-    const selectedRows = table.getFilteredSelectedRowModel().rows
-    const selectedCategories = selectedRows.map(
-        (row) => row.original as category
-    )
+  // If not admin, return null (hide bulk actions)
+  if (session?.user.role !== "admin") return null;
 
-    const handleOpenDelete = () => {
-        if (selectedCategories.length === 0) return
-        setOpenDelete(true)
-    }
+  const [openDelete, setOpenDelete] = useState(false);
 
-    return (
-        <>
-            <DataTableBulkActions table={table} entityName="category">
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button
-                            variant="destructive"
-                            size="icon"
-                            className="size-8"
-                            onClick={handleOpenDelete}
-                            aria-label="Delete selected categories"
-                        >
-                            <RiDeleteBinLine className="size-4" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        Delete selected categories
-                    </TooltipContent>
-                </Tooltip>
-            </DataTableBulkActions>
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedCategories = selectedRows.map(
+    (row) => row.original as category,
+  );
 
-            <CategoryMultiDeleteDialog
-                table={table}
-                open={openDelete}
-                onOpenChange={setOpenDelete}
-            />
-        </>
-    )
+  const handleOpenDelete = () => {
+    if (selectedCategories.length === 0) return;
+    setOpenDelete(true);
+  };
+
+  return (
+    <>
+      <DataTableBulkActions table={table} entityName="category">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="destructive"
+              size="icon"
+              className="size-8"
+              onClick={handleOpenDelete}
+              aria-label="Delete selected categories"
+            >
+              <RiDeleteBinLine className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete selected categories</TooltipContent>
+        </Tooltip>
+      </DataTableBulkActions>
+
+      <CategoryMultiDeleteDialog
+        table={table}
+        open={openDelete}
+        onOpenChange={setOpenDelete}
+      />
+    </>
+  );
 }

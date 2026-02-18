@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@/generated/prisma/client";
 import { logAudit } from "@/lib/audit-service";
+import { requireAccess } from "@/lib/auth-guard";
 
 export type CartItem = {
   productId: string;
@@ -17,6 +18,7 @@ export async function createTransaction(data: {
   total: number;
   customerId?: string;
 }) {
+  const session = await requireAccess("transaction", "create");
   const { items, paymentMethod, total, customerId } = data;
 
   // Use a transaction to ensure atomicity
@@ -30,15 +32,15 @@ export async function createTransaction(data: {
       // ... (existing helper logic) ...
 
       // 2. Create Transaction
-      const cashier = await tx.user.findFirst();
-      if (!cashier) throw new Error("No cashier found");
+      // Use session.user.id as cashierId
+      const cashierId = session.user.id;
 
       const newTransaction = await tx.transaction.create({
         data: {
           id: crypto.randomUUID(),
           total: new Prisma.Decimal(total),
           paymentMethod,
-          cashierId: cashier.id,
+          cashierId: cashierId,
           customerId, // Add customerId here
           createdAt: new Date(),
           updatedAt: new Date(),

@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAccess } from "@/lib/auth-guard";
+
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-service";
@@ -16,6 +18,7 @@ export async function getCustomers(params: {
   query?: string;
 }) {
   const { page, pageSize, query } = params;
+  await requireAccess("customer", "read");
   const skip = (page - 1) * pageSize;
 
   const where: any = query
@@ -42,6 +45,7 @@ export async function getCustomers(params: {
 }
 
 export async function createCustomer(formData: FormData) {
+  await requireAccess("customer", "create");
   const rawData = {
     name: formData.get("name") as string,
     email: formData.get("email") as string,
@@ -98,6 +102,7 @@ export async function updateCustomer(params: {
   formData: FormData;
 }) {
   const { id, formData } = params;
+  await requireAccess("customer", "update");
 
   const rawData = {
     name: formData.get("name") as string,
@@ -127,6 +132,7 @@ export async function updateCustomer(params: {
 }
 
 export async function deleteCustomer(id: string) {
+  await requireAccess("customer", "delete");
   await prisma.customer.delete({ where: { id } });
 
   await logAudit({
@@ -139,6 +145,7 @@ export async function deleteCustomer(id: string) {
 }
 
 export async function deleteCustomers(ids: string[]) {
+  await requireAccess("customer", "delete");
   await prisma.customer.deleteMany({
     where: {
       id: { in: ids },

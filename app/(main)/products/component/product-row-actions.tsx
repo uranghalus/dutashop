@@ -11,10 +11,15 @@ type DataTableRowActionsProps<TData extends { id: string }> = {
   row: Row<TData>;
 };
 
+import { authClient } from "@/lib/auth-client";
+
 export function ProductRowActions<TData extends { id: string }>({
   row,
 }: DataTableRowActionsProps<TData>) {
+  const { data: session } = authClient.useSession();
   const { setOpen, setCurrentRow } = useDialog();
+
+  if (session?.user.role !== "admin") return null;
 
   return (
     <ButtonGroup>

@@ -1,13 +1,14 @@
-import { prisma } from './prisma';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { betterAuth } from 'better-auth';
-import { nextCookies } from 'better-auth/next-js';
+import { prisma } from "./prisma";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
 
-import { admin as adminPg, username } from 'better-auth/plugins';
+import { admin as adminPg, username } from "better-auth/plugins";
+import { ac, admin, cashier, user } from "./auth-permission";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: 'mysql', // or "mysql", "postgresql", ...etc
+    provider: "mysql", // or "mysql", "postgresql", ...etc
   }),
   //...
   emailAndPassword: {
@@ -21,14 +22,27 @@ export const auth = betterAuth({
     },
     additionalFields: {
       role: {
-        type: 'string',
+        type: "string",
         input: false,
       },
       username: {
-        type: 'string',
+        type: "string",
         input: true,
       },
     },
   },
-  plugins: [nextCookies(), username(), adminPg()],
+  plugins: [
+    nextCookies(),
+    username(),
+    adminPg({
+      defaultRole: "user",
+      adminRole: "admin",
+      ac: ac,
+      roles: {
+        admin,
+        user,
+        cashier,
+      },
+    }),
+  ],
 });

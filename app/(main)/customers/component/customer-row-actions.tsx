@@ -13,7 +13,10 @@ import { useDialog } from "@/context/dialog-provider";
 import { RiDeleteBinLine, RiEditLine, RiMore2Line } from "@remixicon/react";
 import { Customer } from "./customer-columns";
 
+import { authClient } from "@/lib/auth-client";
+
 export function CustomerRowActions({ row }: { row: Customer }) {
+  const { data: session } = authClient.useSession();
   const { setOpen, setCurrentRow } = useDialog();
 
   return (
@@ -35,17 +38,21 @@ export function CustomerRowActions({ row }: { row: Customer }) {
           <RiEditLine className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            setCurrentRow(row);
-            setOpen("delete");
-          }}
-          className="text-destructive focus:text-destructive"
-        >
-          <RiDeleteBinLine className="mr-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
+        {session?.user.role === "admin" && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                setCurrentRow(row);
+                setOpen("delete");
+              }}
+              className="text-destructive focus:text-destructive"
+            >
+              <RiDeleteBinLine className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

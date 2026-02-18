@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { requireAccess } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit-service";
 import {
@@ -17,6 +18,7 @@ export async function getUsers(params: {
   query?: string;
 }) {
   const { page, pageSize, query } = params;
+  await requireAccess("user", "read");
   const skip = (page - 1) * pageSize;
 
   const where: any = query
@@ -43,6 +45,7 @@ export async function getUsers(params: {
 }
 
 export async function createUser(formData: FormData) {
+  await requireAccess("user", "create");
   const rawData = {
     name: formData.get("name") as string,
     email: formData.get("email") as string,
@@ -143,6 +146,7 @@ export async function deleteUser(id: string) {
 }
 
 export async function deleteUsers(ids: string[]) {
+  await requireAccess("user", "delete");
   // Use Promise.all to delete users in parallel
   // We use auth.api.removeUser to ensure proper cleanup of sessions/etc managed by better-auth
   // If one fails, we might want to continue or throw.
@@ -169,6 +173,7 @@ export async function deleteUsers(ids: string[]) {
 }
 
 export async function banUser(params: { userId: string; banReason?: string }) {
+  await requireAccess("user", "update");
   const { userId, banReason } = params;
 
   await auth.api.banUser({
@@ -190,6 +195,7 @@ export async function banUser(params: { userId: string; banReason?: string }) {
 }
 
 export async function unbanUser(userId: string) {
+  await requireAccess("user", "update");
   await auth.api.unbanUser({
     body: {
       userId,

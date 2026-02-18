@@ -17,9 +17,15 @@ type CustomerBulkActionProps<TData> = {
   table: Table<TData>;
 };
 
+import { authClient } from "@/lib/auth-client";
+
 export function CustomerBulkAction<TData>({
   table,
 }: CustomerBulkActionProps<TData>) {
+  const { data: session } = authClient.useSession();
+
+  if (session?.user.role !== "admin") return null;
+
   const [openDelete, setOpenDelete] = useState(false);
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;

@@ -1,9 +1,11 @@
-'use server';
+"use server";
 
-import { prisma } from '@/lib/prisma';
-import { revalidatePath } from 'next/cache';
-import { randomUUID } from 'crypto';
-import { logAudit } from '@/lib/audit-service';
+import { requireAccess } from "@/lib/auth-guard";
+
+import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
+import { randomUUID } from "crypto";
+import { logAudit } from "@/lib/audit-service";
 export async function getCategories({
   page,
   pageSize,
@@ -12,12 +14,13 @@ export async function getCategories({
   pageSize: number;
 }) {
   const skip = page * pageSize;
+  await requireAccess("category", "read");
 
   const [data, total] = await Promise.all([
     prisma.category.findMany({
       skip,
       take: pageSize,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     }),
     prisma.category.count(),
   ]);
@@ -28,7 +31,8 @@ export async function getCategories({
   };
 }
 export async function createCategory(formData: FormData) {
-  const name = formData.get('name') as string;
+  await requireAccess("category", "create");
+  const name = formData.get("name") as string;
   const id = randomUUID();
 
   await prisma.category.create({
@@ -40,17 +44,18 @@ export async function createCategory(formData: FormData) {
   });
 
   await logAudit({
-    action: 'CREATE',
-    entity: 'Category',
+    action: "CREATE",
+    entity: "Category",
     entityId: id,
     details: { name },
   });
 
-  revalidatePath('/categories');
+  revalidatePath("/categories");
 }
 
 export async function updateCategory(id: string, formData: FormData) {
-  const name = formData.get('name') as string;
+  await requireAccess("category", "update");
+  const name = formData.get("name") as string;
 
   await prisma.category.update({
     where: { id },
@@ -61,32 +66,33 @@ export async function updateCategory(id: string, formData: FormData) {
   });
 
   await logAudit({
-    action: 'UPDATE',
-    entity: 'Category',
+    action: "UPDATE",
+    entity: "Category",
     entityId: id,
     details: { name },
   });
 
-
-  revalidatePath('/categories');
+  revalidatePath("/categories");
 }
 export async function deleteCategory(id: string) {
+  await requireAccess("category", "delete");
   await prisma.category.delete({
     where: { id },
   });
 
   await logAudit({
-    action: 'DELETE',
-    entity: 'Category',
+    action: "DELETE",
+    entity: "Category",
     entityId: id,
   });
 
-  revalidatePath('/categories');
+  revalidatePath("/categories");
 }
 /* ================================
    DELETE BULK
 ================================ */
 export async function deleteCategoryBulk(ids: string[]) {
+  await requireAccess("category", "delete");
   await prisma.category.deleteMany({
     where: {
       id: {
@@ -96,11 +102,11 @@ export async function deleteCategoryBulk(ids: string[]) {
   });
 
   await logAudit({
-    action: 'DELETE',
-    entity: 'Category',
-    entityId: 'BATCH',
+    action: "DELETE",
+    entity: "Category",
+    entityId: "BATCH",
     details: { count: ids.length, ids },
   });
 
-  revalidatePath('/categories');
+  revalidatePath("/categories");
 }

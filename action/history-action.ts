@@ -1,5 +1,7 @@
 "use server";
 
+import { requireAccess } from "@/lib/auth-guard";
+
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -11,6 +13,12 @@ export async function getTransactions(params: {
   to?: Date;
 }) {
   const { page, pageSize, query, from, to } = params;
+  await requireAccess("report", "read"); // or transaction read? User said "view product lists, input customer data, generate sales reports". Transactions list is likely a report or sales history.
+  // I will use 'transaction' read for history.
+  // Wait, user said "generate sales reports" -> likely dashboard/reports.
+  // Sales History is also a report/list of transactions.
+  // I'll use 'transaction' 'read'.
+  await requireAccess("transaction", "read");
   const skip = page * pageSize;
 
   const where: any = {
@@ -80,6 +88,7 @@ export async function getTransactions(params: {
 }
 
 export async function getTransaction(id: string) {
+  await requireAccess("transaction", "read");
   const transaction = await prisma.transaction.findUnique({
     where: { id },
     include: {

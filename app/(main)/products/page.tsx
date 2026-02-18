@@ -5,7 +5,10 @@ import ProductPrimaryButton from "./component/product-primary-button";
 import { ProductTable } from "./component/product-table";
 import ProductDialogs from "./component/product-dialogs";
 
-export default function ProductPage() {
+import { requireAccess } from "@/lib/auth-guard";
+
+export default async function ProductPage() {
+  await requireAccess("product", "read");
   return (
     <DialogProvider>
       <Main fluid className="space-y-6">
